@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>计算机（漓谱）v1.6.0</title>
+<title>计算机（漓谱）v1.6.9 </title>
 <style>
 * {
     margin: 0;
@@ -122,7 +122,7 @@ body {
     margin-left: auto;
 }
 
-#history-btn, #toggle-btn {
+#undo-btn,#redo-btn,#history-btn, #toggle-btn {
     width: 50px;
     height: 50px;
     font-size: 18px;
@@ -142,7 +142,7 @@ body {
     transition: all 0.12s ease;
 }
 
-#trash-btn:active, #history-btn:active, #toggle-btn:active {
+#trash-btn:active,#undo-btn:active,#redo-btn:active, #history-btn:active, #toggle-btn:active {
     transform: translateY(0);
     box-shadow:
         0 2px 4px rgba(0,0,0,0.15),
@@ -286,6 +286,8 @@ button.eq:active {
     <div class="extra-row">
         <button id="trash-btn">🗑️</button>
         <div class="right-buttons">
+            <button id="undo-btn">↪</button>
+            <button id="redo-btn">↩</button>
             <button id="history-btn">历史<br>记录</button>
             <button id="toggle-btn">√ π<br>^ =</button>
         </div>
@@ -358,6 +360,8 @@ const page2Buttons = document.querySelectorAll('#page-2 button');
 const toggleBtn = document.getElementById('toggle-btn');
 const historyBtn = document.getElementById('history-btn');
 const trashBtn = document.getElementById('trash-btn');
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
 const mainPage = document.getElementById('main-page');
 const page2 = document.getElementById('page-2');
 const page3 = document.getElementById('page3');
@@ -368,8 +372,12 @@ const btnConfirm = document.querySelector('.btn-confirm');
 let value = '';
 let currentPage = 'main';
 let prevPage = 'main';
-let historyRecords = [];
+let historyRecords = JSON.parse(localStorage.getItem('calcHistory')) || [];
 let confirmStep = 'cancel';
+let undoStack = [''];
+let redoStack = [];
+const MAX_UNDO_STEPS = 30;
+let calcMap = new Map();
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -392,6 +400,38 @@ function updateHistoryDisplay() {
     historyDisplay.innerHTML = html;
 }
 
+function saveHistoryToLocal() {
+    localStorage.setItem('calcHistory', JSON.stringify(historyRecords));
+}
+
+function saveToUndo() {
+    if (value !== undoStack[undoStack.length - 1]) {
+        undoStack.push(value);
+        redoStack = [];
+        if (undoStack.length > MAX_UNDO_STEPS) {
+            undoStack.shift();
+        }
+    }
+}
+
+function undo() {
+    if (undoStack.length <= 1) return;
+    redoStack.push(undoStack.pop());
+    value = undoStack[undoStack.length - 1];
+    d.value = value;
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    const restoreVal = redoStack.pop();
+    undoStack.push(restoreVal);
+    if (undoStack.length > MAX_UNDO_STEPS) {
+        undoStack.shift();
+    }
+    value = restoreVal;
+    d.value = value;
+}
+
 function copyHistoryResult(el) {
     const lineText = el.textContent.trim();
     const parts = lineText.split('=');
@@ -405,34 +445,23 @@ function copyHistoryResult(el) {
     const prevChar = pos > 0 ? currentContent[pos - 1] : '';
     const nextChar = pos < currentContent.length ? currentContent[pos] : '';
 
+    let newVal = '';
     if (opReg.test(prevChar) && opReg.test(nextChar)) {
-        const newVal = currentContent.substring(0, pos) + targetResult + currentContent.substring(pos);
-        d.value = newVal;
-        value = newVal;
-        d.setSelectionRange(pos + targetResult.length, pos + targetResult.length);
-        return;
-    }
-
-    if (!opReg.test(prevChar) && opReg.test(nextChar) && prevChar !== '') {
+        newVal = currentContent.substring(0, pos) + targetResult + currentContent.substring(pos);
+    } else if (!opReg.test(prevChar) && opReg.test(nextChar) && prevChar !== '') {
         let left = pos - 1;
         while (left >= 0 && !opReg.test(currentContent[left])) {
             left--;
         }
         const prefix = currentContent.substring(0, left + 1);
         const suffix = currentContent.substring(pos);
-        const finalVal = prefix + targetResult + suffix;
-        d.value = finalVal;
-        value = finalVal;
-        d.setSelectionRange(prefix.length + targetResult.length, prefix.length + targetResult.length);
-        return;
-    }
-
-    if (currentContent === '') {
-        value = targetResult;
+        newVal = prefix + targetResult + suffix;
+    } else if (currentContent === '') {
+        newVal = targetResult;
     } else {
         const lastChar = currentContent.slice(-1);
         if (opReg.test(lastChar)) {
-            value = currentContent + targetResult;
+            newVal = currentContent + targetResult;
         } else {
             let lastOpIndex = -1;
             for (let i = currentContent.length - 1; i >= 0; i--) {
@@ -441,17 +470,14 @@ function copyHistoryResult(el) {
                     break;
                 }
             }
-            if (lastOpIndex === -1) {
-                value = targetResult;
-            } else {
-                value = currentContent.substring(0, lastOpIndex + 1) + targetResult;
-            }
+            newVal = lastOpIndex === -1 ? targetResult : currentContent.substring(0, lastOpIndex + 1) + targetResult;
         }
     }
-
+    value = newVal;
     d.value = value;
     d.focus();
-    d.setSelectionRange(d.value.length, d.value.length);
+    d.setSelectionRange(value.length, value.length);
+    saveToUndo();
 }
 
 function addHistoryRecord(expression, result) {
@@ -459,15 +485,16 @@ function addHistoryRecord(expression, result) {
     const record = `${expression} = ${coloredResult}`;
     const opReg = /[+\-×÷√^%]/;
     const hasOperator = opReg.test(expression);
-    if (hasOperator) {
-        historyRecords.push(record);
-    } else {
-        const sameRecordIndex = historyRecords.findIndex(item => item.startsWith(`${expression} =`));
-        if (sameRecordIndex !== -1) {
-            historyRecords.splice(sameRecordIndex, 1);
-        }
-        historyRecords.push(record);
+    const sameRecordIndex = historyRecords.findIndex(item => item.startsWith(`${expression} =`));
+    if (sameRecordIndex !== -1) {
+        historyRecords.splice(sameRecordIndex, 1);
     }
+    historyRecords.push(record);
+    if (hasOperator) {
+        calcMap.set(expression, result);
+        calcMap.set(result, expression);
+    }
+    saveHistoryToLocal();
     updateHistoryDisplay();
 }
 
@@ -492,6 +519,8 @@ function cleanExpression(expr) {
 function switchPage() {
     page3.style.display = 'none';
     trashBtn.style.display = 'none';
+    undoBtn.style.display = 'flex';
+    redoBtn.style.display = 'flex';
     if (currentPage === 'main') {
         mainPage.style.display = 'none';
         page2.style.display = 'grid';
@@ -509,6 +538,8 @@ function switchHistoryPage() {
     if (currentPage === 'page3') {
         page3.style.display = 'none';
         trashBtn.style.display = 'none';
+        undoBtn.style.display = 'flex';
+        redoBtn.style.display = 'flex';
         if (prevPage === 'main') {
             mainPage.style.display = 'grid';
             page2.style.display = 'none';
@@ -524,6 +555,8 @@ function switchHistoryPage() {
         page2.style.display = 'none';
         page3.style.display = 'block';
         trashBtn.style.display = 'flex';
+        undoBtn.style.display = 'none';
+        redoBtn.style.display = 'none';
         currentPage = 'page3';
     }
 }
@@ -533,23 +566,24 @@ function insertAtCursor(text) {
     const end = d.selectionEnd;
     const before = d.value.substring(0, start);
     const after = d.value.substring(end);
-    d.value = before + text + after;
+    value = before + text + after;
+    d.value = value;
     d.selectionStart = d.selectionEnd = start + text.length;
-    value = d.value;
+    saveToUndo();
 }
 
 function deleteAtCursor() {
+    if (value === '') return;
     const start = d.selectionStart;
     const end = d.selectionEnd;
     if (start === end) {
-        if (start === 0) return;
-        d.value = d.value.substring(0, start - 1) + d.value.substring(end);
-        d.selectionStart = d.selectionEnd = start - 1;
+        value = value.substring(0, start - 1) + value.substring(end);
     } else {
-        d.value = d.value.substring(0, start) + d.value.substring(end);
-        d.selectionStart = d.selectionEnd = start;
+        value = value.substring(0, start) + value.substring(end);
     }
-    value = d.value;
+    d.value = value;
+    d.selectionStart = d.selectionEnd = start > 0 ? start - 1 : 0;
+    saveToUndo();
 }
 
 function bindButtons(buttons) {
@@ -570,12 +604,15 @@ function bindButtons(buttons) {
             if (isError) {
                 value = "";
                 d.value = "";
+                saveToUndo();
+                return;
             }
 
             switch(t) {
                 case "归零":
                     value = "";
                     d.value = "";
+                    saveToUndo();
                     break;
                 case "⌫":
                     deleteAtCursor();
@@ -588,6 +625,7 @@ function bindButtons(buttons) {
                         if (/\/0(?!\d)/.test(exp)) {
                             value = "不能除以 0";
                             d.value = value;
+                            saveToUndo();
                             return;
                         }
 
@@ -597,6 +635,7 @@ function bindButtons(buttons) {
                             if (p > 999) {
                                 value = "计算超时";
                                 d.value = value;
+                                saveToUndo();
                                 return;
                             }
                         }
@@ -610,16 +649,18 @@ function bindButtons(buttons) {
                             .replace(/\^/g, '**');
 
                         let res = Function('"use strict";return ' + exp)();
-                        value = formatResult(res);
-
-                        if (value !== "不能除以 0" && value !== "啥意思？" && value !== "计算超时") {
-                            addHistoryRecord(originalExpr, value);
-                            value = res.toString();
+                        const result = formatResult(res);
+                        saveToUndo();
+                        value = result;
+                        d.value = value;
+                        if (result !== "不能除以 0" && result !== "啥意思？" && result !== "计算超时") {
+                            addHistoryRecord(originalExpr, result);
                         }
                     } catch (e) {
                         value = "啥意思？";
+                        d.value = value;
+                        saveToUndo();
                     }
-                    d.value = value;
                     break;
                 default:
                     insertAtCursor(t);
@@ -645,6 +686,12 @@ trashBtn.onclick = () => {
     btnConfirm.classList.remove('active');
 };
 
+undoBtn.onmousedown = e => e.preventDefault();
+undoBtn.onclick = undo;
+
+redoBtn.onmousedown = e => e.preventDefault();
+redoBtn.onclick = redo;
+
 btnCancel.onmousedown = e => e.preventDefault();
 btnCancel.onclick = () => {
     if (confirmStep === 'cancel') {
@@ -660,6 +707,7 @@ btnConfirm.onmousedown = e => e.preventDefault();
 btnConfirm.onclick = () => {
     if (confirmStep === 'confirm') {
         historyRecords = [];
+        saveHistoryToLocal();
         updateHistoryDisplay();
         overlay.style.display = 'none';
     } else {
@@ -671,6 +719,7 @@ btnConfirm.onclick = () => {
 
 d.addEventListener('input', () => {
     value = d.value;
+    saveToUndo();
 });
 
 window.onload = () => {
