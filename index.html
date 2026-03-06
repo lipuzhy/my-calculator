@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>计算机（漓谱）v1.5.9</title>
 <style>
-/* ===================== 全局样式重置 ===================== */
 * {
     margin: 0;
     padding: 0;
@@ -16,7 +15,6 @@
     -webkit-text-size-adjust: none;
 }
 
-/* ===================== 页面主体样式 ===================== */
 body {
     background: #E0E0E0;
     display: grid;
@@ -24,7 +22,6 @@ body {
     min-height: 100vh;
 }
 
-/* ===================== 计算器主体容器 ===================== */
 .calculator {
     background: #fff;
     border-radius: 24px;
@@ -37,7 +34,6 @@ body {
         inset 0 2px 0 rgba(255,255,0.9);
 }
 
-/* ===================== 主显示框样式（输入/结果） ===================== */
 #display {
     width: 100%;
     height: 90px;
@@ -57,7 +53,6 @@ body {
         0 1px 2px rgba(255,255,255,0.8);
 }
 
-/* ===================== 历史记录显示区样式 ===================== */
 #history-display {
     width: 100%;
     height: 400px;
@@ -81,7 +76,6 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-/* ===================== 历史记录滚动条美化 ===================== */
 #history-display::-webkit-scrollbar {
     width: 4px;
 }
@@ -97,7 +91,6 @@ body {
     background: #ccc;
 }
 
-/* ===================== 辅助按键行（清空/历史/切换） ===================== */
 .extra-row {
     display: flex;
     justify-content: flex-start;
@@ -105,7 +98,6 @@ body {
     margin-bottom: 12px;
 }
 
-/* ===================== 清空历史记录按钮 ===================== */
 #trash-btn {
     width: 50px;
     height: 50px;
@@ -124,14 +116,12 @@ body {
     transition: all 0.12s ease;
 }
 
-/* ===================== 右侧辅助按钮容器 ===================== */
 .right-buttons {
     display: flex;
     gap: 6px;
     margin-left: auto;
 }
 
-/* ===================== 历史记录/页面切换按钮 ===================== */
 #history-btn, #toggle-btn {
     width: 50px;
     height: 50px;
@@ -152,7 +142,6 @@ body {
     transition: all 0.12s ease;
 }
 
-/* ===================== 辅助按键按下效果 ===================== */
 #trash-btn:active, #history-btn:active, #toggle-btn:active {
     transform: translateY(0);
     box-shadow:
@@ -161,7 +150,6 @@ body {
         inset 0 1px 0 rgba(255,255,255,0.8);
 }
 
-/* ===================== 按键网格通用样式 ===================== */
 .button-grid, .page-2, .page-3 {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -175,7 +163,6 @@ body {
     grid-template-columns: 1fr;
 }
 
-/* ===================== 普通按键基础样式 ===================== */
 button {
     padding: 22px 0;
     font-size: 20px;
@@ -193,7 +180,6 @@ button {
     appearance: none;
 }
 
-/* ===================== 普通按键按下效果 ===================== */
 button:active {
     transform: translateY(0);
     box-shadow:
@@ -201,7 +187,6 @@ button:active {
         0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* ===================== 归零键专属样式 ===================== */
 button.reset-btn {
     background: #D8D8D8;
     box-shadow:
@@ -217,7 +202,6 @@ button.reset-btn:active {
         0 1.5px 4.5px rgba(0,0,0,0.12);
 }
 
-/* ===================== 等号键专属样式 ===================== */
 button.eq {
     background: #FF9900;
     color: #fff;
@@ -235,7 +219,6 @@ button.eq:active {
         0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* ===================== 清空历史确认弹窗遮罩 ===================== */
 .overlay {
     position: fixed;
     top: 0;
@@ -249,7 +232,6 @@ button.eq:active {
     z-index: 999;
 }
 
-/* ===================== 弹窗主体样式 ===================== */
 .confirm-box {
     background: #fff;
     border-radius: 16px;
@@ -274,13 +256,11 @@ button.eq:active {
     font-size: 18px;
 }
 
-/* ===================== 弹窗按钮激活样式 ===================== */
 .btn-confirm.active, .btn-cancel.active {
     background: #FF9900;
     color: #fff;
 }
 
-/* ===================== 历史记录行点击区域样式 ===================== */
 .history-row {
     cursor: pointer;
     padding: 4px 0;
@@ -290,7 +270,6 @@ button.eq:active {
 </head>
 <body>
 
-<!-- ===================== 清空历史确认弹窗 ===================== -->
 <div class="overlay" id="overlay">
     <div class="confirm-box">
         <div class="confirm-text">清空历史记录吗？</div>
@@ -301,7 +280,6 @@ button.eq:active {
     </div>
 </div>
 
-<!-- ===================== 计算器核心容器 ===================== -->
 <div class="calculator">
     <input type="text" id="display" value="">
 
@@ -313,7 +291,6 @@ button.eq:active {
         </div>
     </div>
 
-    <!-- ===================== 页面1：基础计算按键 ===================== -->
     <div class="button-grid" id="main-page">
         <button class="reset-btn">归零</button>
         <button>.</button>
@@ -341,7 +318,6 @@ button.eq:active {
         <button>÷</button>
     </div>
 
-    <!-- ===================== 页面2：科学计算按键（π/√/^） ===================== -->
     <div class="page-2" id="page-2">
         <button class="reset-btn">归零</button>
         <button>.</button>
@@ -369,14 +345,12 @@ button.eq:active {
         <button>^</button>
     </div>
 
-    <!-- ===================== 页面3：历史记录显示 ===================== -->
     <div class="page-3" id="page3">
         <div id="history-display"></div>
     </div>
 </div>
 
 <script>
-// ===================== 获取所有页面元素（全局变量） =====================
 const d = document.getElementById('display');
 const historyDisplay = document.getElementById('history-display');
 const mainButtons = document.querySelectorAll('#main-page button');
@@ -391,7 +365,6 @@ const overlay = document.getElementById('overlay');
 const btnCancel = document.querySelector('.btn-cancel');
 const btnConfirm = document.querySelector('.btn-confirm');
 
-// ===================== 全局状态变量 =====================
 let value = '';
 let currentPage = 'main';
 let prevPage = 'main';
@@ -401,14 +374,12 @@ let confirmStep = 'cancel';
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// ===================== 移动端输入框适配 =====================
 if (isMobile) d.inputMode = "none";
 if (isIOS) {
     d.addEventListener('click', () => d.focus());
     d.addEventListener('blur', () => setTimeout(() => d.focus(), 10));
 }
 
-// ===================== 历史记录相关函数 =====================
 function updateHistoryDisplay() {
     if (historyRecords.length === 0) {
         historyDisplay.innerHTML = '暂无计算记录';
@@ -421,7 +392,6 @@ function updateHistoryDisplay() {
     historyDisplay.innerHTML = html;
 }
 
-// ===================== 核心粘贴逻辑 =====================
 function copyHistoryResult(el) {
     const lineText = el.textContent.trim();
     const parts = lineText.split('=');
@@ -435,7 +405,6 @@ function copyHistoryResult(el) {
     const prevChar = pos > 0 ? currentContent[pos - 1] : '';
     const nextChar = pos < currentContent.length ? currentContent[pos] : '';
 
-    // 情况1：前后都是符号 → 插入
     if (opReg.test(prevChar) && opReg.test(nextChar)) {
         const newVal = currentContent.substring(0, pos) + targetResult + currentContent.substring(pos);
         d.value = newVal;
@@ -444,7 +413,6 @@ function copyHistoryResult(el) {
         return;
     }
 
-    // 情况2：前面是数字，后面是符号 → 替换前面数字
     if (!opReg.test(prevChar) && opReg.test(nextChar) && prevChar !== '') {
         let left = pos - 1;
         while (left >= 0 && !opReg.test(currentContent[left])) {
@@ -459,7 +427,6 @@ function copyHistoryResult(el) {
         return;
     }
 
-    // 原有逻辑
     if (currentContent === '') {
         value = targetResult;
     } else {
@@ -490,21 +457,20 @@ function copyHistoryResult(el) {
 function addHistoryRecord(expression, result) {
     const coloredResult = `<span style="color:#FF9900; font-weight:bold;">${result}</span>`;
     const record = `${expression} = ${coloredResult}`;
-
     const opReg = /[+\-×÷√^%]/;
     const hasOperator = opReg.test(expression);
-
     if (hasOperator) {
         historyRecords.push(record);
     } else {
-        historyRecords = historyRecords.filter(item => !item.includes('='));
+        const sameRecordIndex = historyRecords.findIndex(item => item.startsWith(`${expression} =`));
+        if (sameRecordIndex !== -1) {
+            historyRecords.splice(sameRecordIndex, 1);
+        }
         historyRecords.push(record);
     }
-
     updateHistoryDisplay();
 }
 
-// ===================== 计算相关工具函数 =====================
 function formatResult(num) {
     if (!isFinite(num)) {
         return "计算超时";
@@ -523,7 +489,6 @@ function cleanExpression(expr) {
     return expr;
 }
 
-// ===================== 页面切换函数 =====================
 function switchPage() {
     page3.style.display = 'none';
     trashBtn.style.display = 'none';
@@ -563,7 +528,6 @@ function switchHistoryPage() {
     }
 }
 
-// ===================== 输入框操作函数 =====================
 function insertAtCursor(text) {
     const start = d.selectionStart;
     const end = d.selectionEnd;
@@ -588,14 +552,12 @@ function deleteAtCursor() {
     value = d.value;
 }
 
-// ===================== 按键绑定通用函数 =====================
 function bindButtons(buttons) {
     buttons.forEach(btn => {
         btn.onmousedown = e => e.preventDefault();
         btn.onclick = () => {
             const t = btn.textContent.trim();
 
-            // ———— 错误状态 / 空白 按 = 直接清空 ————
             const isError = value === "不能除以 0" || value === "啥意思？" || value === "计算超时";
             if (t === "=") {
                 if (value.trim() === "" || isError) {
@@ -605,7 +567,6 @@ function bindButtons(buttons) {
                 }
             }
 
-            // ———— 错误状态按任意键自动清空 ————
             if (isError) {
                 value = "";
                 d.value = "";
@@ -667,11 +628,9 @@ function bindButtons(buttons) {
     });
 }
 
-// ===================== 初始化按键绑定 =====================
 bindButtons(mainButtons);
 bindButtons(page2Buttons);
 
-// ===================== 辅助按钮点击事件绑定 =====================
 toggleBtn.onmousedown = e => e.preventDefault();
 toggleBtn.onclick = switchPage;
 
@@ -710,12 +669,10 @@ btnConfirm.onclick = () => {
     }
 };
 
-// ===================== 输入框实时同步 =====================
 d.addEventListener('input', () => {
     value = d.value;
 });
 
-// ===================== 页面加载初始化 =====================
 window.onload = () => {
     d.value = value;
     d.focus();
