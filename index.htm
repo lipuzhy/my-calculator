@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>计算机（漓谱）v1.5.9</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: none;
+}
+
+body {
+    background: #E0E0E0;
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+}
+
+.calculator {
+    background: #fff;
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow:
+        0 15px 25px rgba(0,0,0,0.15),
+        0 5px 10px rgba(0,0,0,0.05),
+        inset 0 2px 0 rgba(255,255,0.9);
+}
+
+#display {
+    width: 100%;
+    height: 90px;
+    background: #f8f8f8;
+    border: none;
+    border-radius: 16px;
+    font-size: 36px;
+    text-align: right;
+    padding: 0 16px;
+    outline: none;
+    caret-color: #FF9900;
+    margin-bottom: 12px;
+    color: #000;
+    box-shadow:
+        inset 0 5px 10px rgba(0,0,0,0.15),
+        inset 0 2px 5px rgba(0,0,0,0.1),
+        0 1px 2px rgba(255,255,255,0.8);
+}
+
+#history-display {
+    width: 100%;
+    height: 400px;
+    background: #f8f8f8;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    text-align: right;
+    padding: 12px;
+    outline: none;
+    color: #000;
+    box-shadow:
+        inset 0 5px 10px rgba(0,0,0,0.15),
+        inset 0 2px 5px rgba(0,0,0,0.1),
+        0 1px 2px rgba(255,255,255,0.8);
+    resize: none;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd #f8f8f8;
+    -webkit-overflow-scrolling: touch;
+}
+
+#history-display::-webkit-scrollbar {
+    width: 4px;
+}
+#history-display::-webkit-scrollbar-track {
+    background: #f8f8f8;
+    border-radius: 2px;
+}
+#history-display::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 2px;
+}
+#history-display::-webkit-scrollbar-thumb:active {
+    background: #ccc;
+}
+
+.extra-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#trash-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #FFB3B3;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.18),
+        0 2px 4px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    transform: translateY(-2px);
+    transition: all 0.12s ease;
+}
+
+.right-buttons {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+#history-btn, #toggle-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #F0F0F0;
+    color: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.18),
+        0 2px 4px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    transform: translateY(-2px);
+    transition: all 0.12s ease;
+}
+
+#trash-btn:active, #history-btn:active, #toggle-btn:active {
+    transform: translateY(0);
+    box-shadow:
+        0 2px 4px rgba(0,0,0,0.15),
+        0 1px 2px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.button-grid, .page-2, .page-3 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+}
+.page-2, .page-3 {
+    display: none;
+}
+.page-3 {
+    grid-template-columns: 1fr;
+}
+
+button {
+    padding: 22px 0;
+    font-size: 20px;
+    border: none;
+    border-radius: 16px;
+    background: #F0F0F0;
+    color: #000;
+    box-shadow:
+        0 7.5px 12px rgba(0,0,0,0.18),
+        0 4.5px 6px rgba(0,0,0,0.12),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow:
+        0 3px 6px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.08);
+}
+
+button.reset-btn {
+    background: #D8D8D8;
+    box-shadow:
+        0 11.25px 18px rgba(0,0,0,0.27),
+        0 6.75px 9px rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+}
+button.reset-btn:active {
+    transform: translateY(0);
+    box-shadow:
+        0 4.5px 9px rgba(0,0,0,0.22),
+        0 1.5px 4.5px rgba(0,0,0,0.12);
+}
+
+button.eq {
+    background: #FF9900;
+    color: #fff;
+    box-shadow:
+        0 7.5px 12px rgba(0,0,0,0.18),
+        0 4.5px 6px rgba(0,0,0,0.12),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+button.eq:active {
+    transform: translateY(0);
+    box-shadow:
+        0 3px 6px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.08);
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.confirm-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    width: 280px;
+    text-align: center;
+}
+
+.confirm-text {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.confirm-btns {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-btns button {
+    flex: 1;
+    padding: 14px 0;
+    font-size: 18px;
+}
+
+.btn-confirm.active, .btn-cancel.active {
+    background: #FF9900;
+    color: #fff;
+}
+
+.history-row {
+    cursor: pointer;
+    padding: 4px 0;
+    user-select: none;
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+    <div class="confirm-box">
+        <div class="confirm-text">清空历史记录吗？</div>
+        <div class="confirm-btns">
+            <button class="btn-cancel active">取消</button>
+            <button class="btn-confirm">确定</button>
+        </div>
+    </div>
+</div>
+
+<div class="calculator">
+    <input type="text" id="display" value="">
+
+    <div class="extra-row">
+        <button id="trash-btn">🗑️</button>
+        <div class="right-buttons">
+            <button id="history-btn">历史<br>记录</button>
+            <button id="toggle-btn">√ π<br>^ =</button>
+        </div>
+    </div>
+    <div class="button-grid" id="main-page">
+        <button class="reset-btn">归零</button>
+        <button>.</button>
+        <button>⌫</button>
+        <button class="eq">=</button>
+
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>+</button>
+
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button>-</button>
+
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button>×</button>
+
+        <button>00</button>
+        <button>0</button>
+        <button>%</button>
+        <button>÷</button>
+    </div>
+
+    <div class="page-2" id="page-2">
+        <button class="reset-btn">归零</button>
+        <button>.</button>
+        <button>⌫</button>
+        <button class="eq">=</button>
+
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>+</button>
+
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button>-</button>
+
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button>×</button>
+
+        <button>00</button>
+        <button>π</button>
+        <button>√</button>
+        <button>^</button>
+    </div>
+
+    <div class="page-3" id="page3">
+        <div id="history-display"></div>
+    </div>
+</div>
+
+<script>
+const d = document.getElementById('display');
+const historyDisplay = document.getElementById('history-display');
+const mainButtons = document.querySelectorAll('#main-page button');
+const page2Buttons = document.querySelectorAll('#page-2 button');
+const toggleBtn = document.getElementById('toggle-btn');
+const historyBtn = document.getElementById('history-btn');
+const trashBtn = document.getElementById('trash-btn');
+const mainPage = document.getElementById('main-page');
+const page2 = document.getElementById('page-2');
+const page3 = document.getElementById('page3');
+const overlay = document.getElementById('overlay');
+const btnCancel = document.querySelector('.btn-cancel');
+const btnConfirm = document.querySelector('.btn-confirm');
+
+let value = '';
+let currentPage = 'main';
+let prevPage = 'main';
+let historyRecords = [];
+let confirmStep = 'cancel';
+
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+if (isMobile) d.inputMode = "none";
+if (isIOS) {
+    d.addEventListener('click', () => d.focus());
+    d.addEventListener('blur', () => setTimeout(() => d.focus(), 10));
+}
+
+function updateHistoryDisplay() {
+    if (historyRecords.length === 0) {
+        historyDisplay.innerHTML = '暂无计算记录';
+        return;
+    }
+    let html = '';
+    for (let rec of [...historyRecords].reverse()) {
+        html += `<div class="history-row" onclick="copyHistoryResult(this)">${rec}</div><div style="height:1px;background:#ddd;margin:4px 0;"></div>`;
+    }
+    historyDisplay.innerHTML = html;
+}
+
+function copyHistoryResult(el) {
+    const lineText = el.textContent.trim();
+    const parts = lineText.split('=');
+    if (parts.length < 2) return;
+    const targetResult = parts[1].trim();
+
+    const currentContent = d.value;
+    const pos = d.selectionStart;
+    const opReg = /[+\-×÷√^%]/;
+
+    const prevChar = pos > 0 ? currentContent[pos - 1] : '';
+    const nextChar = pos < currentContent.length ? currentContent[pos] : '';
+
+    // 情况1：前后都是符号 → 插入
+    if (opReg.test(prevChar) && opReg.test(nextChar)) {
+        const newVal = currentContent.substring(0, pos) + targetResult + currentContent.substring(pos);
+        d.value = newVal;
+        value = newVal;
+        d.setSelectionRange(pos + targetResult.length, pos + targetResult.length);
+        return;
+    }
+
+    // 情况2：前面是数字，后面是符号 → 替换前面数字
+    if (!opReg.test(prevChar) && opReg.test(nextChar) && prevChar !== '') {
+        let left = pos - 1;
+        while (left >= 0 && !opReg.test(currentContent[left])) {
+            left--;
+        }
+        const prefix = currentContent.substring(0, left + 1);
+        const suffix = currentContent.substring(pos);
+        const finalVal = prefix + targetResult + suffix;
+        d.value = finalVal;
+        value = finalVal;
+        d.setSelectionRange(prefix.length + targetResult.length, prefix.length + targetResult.length);
+        return;
+    }
+
+    // 原有逻辑
+    if (currentContent === '') {
+        value = targetResult;
+    } else {
+        const lastChar = currentContent.slice(-1);
+        if (opReg.test(lastChar)) {
+            value = currentContent + targetResult;
+        } else {
+            let lastOpIndex = -1;
+            for (let i = currentContent.length - 1; i >= 0; i--) {
+                if (opReg.test(currentContent[i])) {
+                    lastOpIndex = i;
+                    break;
+                }
+            }
+            if (lastOpIndex === -1) {
+                value = targetResult;
+            } else {
+                value = currentContent.substring(0, lastOpIndex + 1) + targetResult;
+            }
+        }
+    }
+
+    d.value = value;
+    d.focus();
+    d.setSelectionRange(d.value.length, d.value.length);
+}
+
+function addHistoryRecord(expression, result) {
+    const coloredResult = `<span style="color:#FF9900; font-weight:bold;">${result}</span>`;
+    const record = `${expression} = ${coloredResult}`;
+
+    const opReg = /[+\-×÷√^%]/;
+    const hasOperator = opReg.test(expression);
+
+    if (hasOperator) {
+        historyRecords.push(record);
+    } else {
+        historyRecords = historyRecords.filter(item => !item.includes('='));
+        historyRecords.push(record);
+    }
+
+    updateHistoryDisplay();
+}
+
+function formatResult(num) {
+    if (!isFinite(num)) {
+        return "计算超时";
+    }
+    if (isNaN(num)) {
+        return "啥意思？";
+    }
+    return String(Number(num.toPrecision(12)));
+}
+
+function cleanExpression(expr) {
+    expr = expr.replace(/(^|\+|\-|\×|÷|\()0+([1-9])/g, '$1$2');
+    expr = expr.replace(/(^|\+|\-|\×|÷|\()0+/g, '$10');
+    expr = expr.replace(/√([\d\.]+)/g, 'Math.sqrt($1)');
+    expr = expr.replace(/(\d)(π|√)/g, '$1*$2');
+    return expr;
+}
+
+function switchPage() {
+    page3.style.display = 'none';
+    trashBtn.style.display = 'none';
+    if (currentPage === 'main') {
+        mainPage.style.display = 'none';
+        page2.style.display = 'grid';
+        currentPage = 'page2';
+        toggleBtn.innerHTML = '% ÷<br>0 =';
+    } else {
+        page2.style.display = 'none';
+        mainPage.style.display = 'grid';
+        currentPage = 'main';
+        toggleBtn.innerHTML = '√ π<br>^ =';
+    }
+}
+
+function switchHistoryPage() {
+    if (currentPage === 'page3') {
+        page3.style.display = 'none';
+        trashBtn.style.display = 'none';
+        if (prevPage === 'main') {
+            mainPage.style.display = 'grid';
+            page2.style.display = 'none';
+            currentPage = 'main';
+        } else {
+            page2.style.display = 'grid';
+            mainPage.style.display = 'none';
+            currentPage = 'page2';
+        }
+    } else {
+        prevPage = currentPage;
+        mainPage.style.display = 'none';
+        page2.style.display = 'none';
+        page3.style.display = 'block';
+        trashBtn.style.display = 'flex';
+        currentPage = 'page3';
+    }
+}
+
+function insertAtCursor(text) {
+    const start = d.selectionStart;
+    const end = d.selectionEnd;
+    const before = d.value.substring(0, start);
+    const after = d.value.substring(end);
+    d.value = before + text + after;
+    d.selectionStart = d.selectionEnd = start + text.length;
+    value = d.value;
+}
+
+function deleteAtCursor() {
+    const start = d.selectionStart;
+    const end = d.selectionEnd;
+    if (start === end) {
+        if (start === 0) return;
+        d.value = d.value.substring(0, start - 1) + d.value.substring(end);
+        d.selectionStart = d.selectionEnd = start - 1;
+    } else {
+        d.value = d.value.substring(0, start) + d.value.substring(end);
+        d.selectionStart = d.selectionEnd = start;
+    }
+    value = d.value;
+}
+
+function bindButtons(buttons) {
+    buttons.forEach(btn => {
+        btn.onmousedown = e => e.preventDefault();
+        btn.onclick = () => {
+            const t = btn.textContent.trim();
+
+            // ———— 错误状态 / 空白 按 = 直接清空 ————
+            const isError = value === "不能除以 0" || value === "啥意思？" || value === "计算超时";
+            if (t === "=") {
+                if (value.trim() === "" || isError) {
+                    value = "";
+                    d.value = "";
+                    return;
+                }
+            }
+
+            // ———— 错误状态按任意键自动清空 ————
+            if (isError) {
+                value = "";
+                d.value = "";
+            }
+
+            switch(t) {
+                case "归零":
+                    value = "";
+                    d.value = "";
+                    break;
+                case "⌫":
+                    deleteAtCursor();
+                    break;
+                case "=":
+                    try {
+                        const originalExpr = value;
+                        let exp = cleanExpression(value);
+
+                        if (/\/0(?!\d)/.test(exp)) {
+                            value = "不能除以 0";
+                            d.value = value;
+                            return;
+                        }
+
+                        const powerMatch = exp.match(/\^(\d+)/);
+                        if (powerMatch) {
+                            const p = parseInt(powerMatch[1]);
+                            if (p > 999) {
+                                value = "计算超时";
+                                d.value = value;
+                                return;
+                            }
+                        }
+
+                        exp = exp
+                            .replace(/×/g, '*')
+                            .replace(/÷/g, '/')
+                            .replace(/%/g, '/100')
+                            .replace(/√/g, 'Math.sqrt')
+                            .replace(/π/g, 'Math.PI')
+                            .replace(/\^/g, '**');
+
+                        let res = Function('"use strict";return ' + exp)();
+                        value = formatResult(res);
+
+                        if (value !== "不能除以 0" && value !== "啥意思？" && value !== "计算超时") {
+                            addHistoryRecord(originalExpr, value);
+                            value = res.toString();
+                        }
+                    } catch (e) {
+                        value = "啥意思？";
+                    }
+                    d.value = value;
+                    break;
+                default:
+                    insertAtCursor(t);
+            }
+        };
+    });
+}
+
+bindButtons(mainButtons);
+bindButtons(page2Buttons);
+
+toggleBtn.onmousedown = e => e.preventDefault();
+toggleBtn.onclick = switchPage;
+
+historyBtn.onmousedown = e => e.preventDefault();
+historyBtn.onclick = switchHistoryPage;
+
+trashBtn.onmousedown = e => e.preventDefault();
+trashBtn.onclick = () => {
+    overlay.style.display = 'flex';
+    confirmStep = 'cancel';
+    btnCancel.classList.add('active');
+    btnConfirm.classList.remove('active');
+};
+
+btnCancel.onmousedown = e => e.preventDefault();
+btnCancel.onclick = () => {
+    if (confirmStep === 'cancel') {
+        overlay.style.display = 'none';
+    } else {
+        confirmStep = 'cancel';
+        btnCancel.classList.add('active');
+        btnConfirm.classList.remove('active');
+    }
+};
+
+btnConfirm.onmousedown = e => e.preventDefault();
+btnConfirm.onclick = () => {
+    if (confirmStep === 'confirm') {
+        historyRecords = [];
+        updateHistoryDisplay();
+        overlay.style.display = 'none';
+    } else {
+        confirmStep = 'confirm';
+        btnConfirm.classList.add('active');
+        btnCancel.classList.remove('active');
+    }
+};
+
+d.addEventListener('input', () => {
+    value = d.value;
+});
+
+window.onload = () => {
+    d.value = value;
+    d.focus();
+    updateHistoryDisplay();
+};
+</script>
+</body>
+</html>
