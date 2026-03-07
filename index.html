@@ -4,25 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>计算器（漓谱）v1.8.0 </title>
+<title>计算器（漓谱）v1.7.9 </title>
 <style>
-/* ========== 全局字体强制统一（解决 GitHub Pages + 各浏览器字体错乱） ========== */
-* {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
-    font-weight: normal !important;
-    -webkit-text-size-adjust: 100% !important;
-    text-size-adjust: 100% !important;
-}
-
-#result-display, #expr-display {
-    font-family: inherit !important;
-}
-
-/* ========== 基础样式 ========== */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: none;
 }
@@ -43,7 +31,7 @@ body {
     box-shadow:
         0 15px 25px rgba(0,0,0,0.15),
         0 5px 10px rgba(0,0,0,0.05),
-        inset 0 2px 0 rgba(255,255,255,0.9);
+        inset 0 2px 0 rgba(255,255,0.9);
 }
 
 .display-wrapper {
@@ -61,23 +49,23 @@ body {
     height: 90px;
 }
 
-/* 核心修改：所有设备数字大小改为原来的一半 */
+/* 👇 只改这里：全局统一数字大小为原来一半 */
 #expr-display {
-    font-size: 10px; /* 原20px → 减半为10px */
+    font-size: 10px;
     color: #888;
-    min-height: 24px;
+    min-height: 30px;
     white-space: nowrap;
     overflow: hidden;
     border: none;
     background: transparent;
     text-align: right;
-    width: 100%;
+    width: 50%;
     outline: none;
     transition: all 0.3s ease;
 }
 
 #result-display {
-    font-size: 18px; /* 原36px → 减半为18px */
+    font-size: 18px;
     color: #000;
     font-weight: normal;
     margin-top: 2px;
@@ -92,21 +80,21 @@ body {
     transition: all 0.3s ease;
 }
 
-/* 等号动画：同步修改动画后的字体大小（保持减半比例） */
+/* 👇 只改这里：动画字体也同步减半 */
 #expr-display.animate-expr {
-    font-size: 8px; /* 原16px → 减半为8px */
+    font-size: 8px;
     color: #aaa;
 }
 
 #result-display.animate-result {
-    font-size: 10px; /* 原20px → 减半为10px */
+    font-size: 10px;
     color: #888;
     animation: resultPop 0.3s forwards;
 }
 
 @keyframes resultPop {
     to {
-        font-size: 18px; /* 原36px → 减半为18px */
+        font-size: 18px;
         color: #000;
     }
 }
@@ -336,8 +324,51 @@ button.eq:active {
   padding: 4px 8px;
   margin: 0 -4px;
 }
+/* ========== VIVO 手机专属适配 ========== */
+body.vivo-device {
+    --top-num-font: 34px;
+    --bottom-num-font: 18px;
+    --btn-size: 45px;
+    --btn-font: 14px;
+}
 
-/* 移除所有设备专属的样式（vivo/手机端），避免冲突 */
+/* 顶部数字优化 */
+body.vivo-device #expr-display {
+    font-size: var(--bottom-num-font);
+    margin-bottom: 6px;
+}
+body.vivo-device #result-display {
+    font-size: var(--top-num-font);
+    line-height: 1.1;
+}
+
+/* 小按钮适配 */
+body.vivo-device #undo-btn,
+body.vivo-device #redo-btn,
+body.vivo-device #history-btn,
+body.vivo-device #toggle-btn {
+    width: var(--btn-size);
+    height: var(--btn-size);
+    font-size: var(--btn-font);
+}
+
+/* 历史记录文字更紧凑 */
+body.vivo-device #history-btn {
+    line-height: 1;
+}
+
+/* 手机端专用：缩小数字 + 上移，不破坏动画，平板不生效 */
+@media only screen and (max-width: 767px) and (min-width: 320px) {
+  #result-display {
+    font-size: 28px;
+    margin-top: -12px;
+  }
+  #expr-display {
+    font-size: 16px;
+    margin-top: 0px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -461,7 +492,7 @@ let calcMap = new Map();
 // ========== 手机禁输入法核心 ==========
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-// 移除vivo设备检测，统一所有设备样式
+// ========== VIVO 设备检测 ==========
 const isVivo = /vivo|VIVO/i.test(navigator.userAgent);
 if (isVivo) {
     document.body.classList.add('vivo-device');
@@ -591,7 +622,7 @@ function cleanExpression(expr) {
     expr = expr.replace(/(^|\+|\-|\×|÷|\()0+/g, '$10');
 
     expr = expr.replace(/π(\d)/g, 'π*$1');
-    expr = replace(/(\d)π/g, '$1*π');
+    expr = expr.replace(/(\d)π/g, '$1*π');
     expr = expr.replace(/π+/g, match => 'π*'.repeat(match.length).slice(0, -1));
 
     expr = expr.replace(/\^ *1 *\/ *0/g, '^999');
@@ -666,17 +697,17 @@ function updateDisplays() {
 
     if (isAfterEqual) {
         exprDisplay.value = lastResult || '';
-        exprDisplay.style.fontSize = '18px'; // 原36px → 减半为18px
+        exprDisplay.style.fontSize = '18px';
         exprDisplay.style.color = '#000';
         resultDisplay.value = currentInput || '';
-        resultDisplay.style.fontSize = '10px'; // 原20px → 减半为10px
+        resultDisplay.style.fontSize = '10px';
         resultDisplay.style.color = '#888';
     } else {
         exprDisplay.value = preview || '';
-        exprDisplay.style.fontSize = '10px'; // 原20px → 减半为10px
+        exprDisplay.style.fontSize = '10px';
         exprDisplay.style.color = '#888';
         resultDisplay.value = currentInput || '';
-        resultDisplay.style.fontSize = '18px'; // 原36px → 减半为18px
+        resultDisplay.style.fontSize = '18px';
         resultDisplay.style.color = '#000';
     }
 }
