@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>计算器（漓谱）v1.7.9 </title>
+<title>计算器（漓谱）v1.8.0 </title>
 <style>
 * {
     margin: 0;
@@ -354,6 +354,17 @@ body.vivo-device #toggle-btn {
 /* 历史记录文字更紧凑 */
 body.vivo-device #history-btn {
     line-height: 1;
+}
+/* 手机端专用：缩小数字 + 上移，不破坏动画，平板不生效 */
+@media only screen and (max-width: 767px) and (min-width: 320px) {
+  #result-display {
+    font-size: 28px;
+    margin-top: -12px;
+  }
+  #expr-display {
+    font-size: 16px;
+    margin-top: 0px;
+  }
 }
 
 </style>
