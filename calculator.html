@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>计算器（漓谱）v1.8.0 </title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: none;
+}
+
+body {
+    background: #E0E0E0;
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+}
+
+.calculator {
+    background: #fff;
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow:
+        0 15px 25px rgba(0,0,0,0.15),
+        0 5px 10px rgba(0,0,0,0.05),
+        inset 0 2px 0 rgba(255,255,0.9);
+}
+
+.display-wrapper {
+    width: 100%;
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 4px 16px 12px;
+    margin-bottom: 12px;
+    box-shadow:
+        inset 0 5px 10px rgba(0,0,0,0.15),
+        inset 0 2px 5px rgba(0,0,0,0.1),
+        0 1px 2px rgba(255,255,255,0.8);
+    text-align: right;
+    position: relative;
+    height: 90px;
+}
+
+#expr-display {
+    font-size: 20px;
+    color: #888;
+    min-height: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    border: none;
+    background: transparent;
+    text-align: right;
+    width: 100%;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#result-display {
+    font-size: 36px;
+    color: #000;
+    font-weight: normal;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    border: none;
+    background: transparent;
+    text-align: right;
+    width: 100%;
+    outline: none;
+    caret-color: #FF9900;
+    transition: all 0.3s ease;
+}
+
+/* 等号动画：表达式变小变灰，结果从灰变大 */
+#expr-display.animate-expr {
+    font-size: 16px;
+    color: #aaa;
+}
+
+#result-display.animate-result {
+    font-size: 20px;
+    color: #888;
+    animation: resultPop 0.3s forwards;
+}
+
+@keyframes resultPop {
+    to {
+        font-size: 36px;
+        color: #000;
+    }
+}
+
+#history-display {
+    width: 100%;
+    height: 400px;
+    background: #f8f8f8;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    text-align: right;
+    padding: 12px;
+    outline: none;
+    color: #000;
+    box-shadow:
+        inset 0 5px 10px rgba(0,0,0,0.15),
+        inset 0 2px 5px rgba(0,0,0,0.1),
+        0 1px 2px rgba(255,255,255,0.8);
+    resize: none;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd #f8f8f8;
+    -webkit-overflow-scrolling: touch;
+}
+
+#history-display::-webkit-scrollbar {
+    width: 4px;
+}
+
+#history-display::-webkit-scrollbar-track {
+    background: #f8f8f8;
+    border-radius: 2px;
+}
+
+#history-display::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 2px;
+}
+
+#history-display::-webkit-scrollbar-thumb:active {
+    background: #ccc;
+}
+
+.extra-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#trash-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #FFB3B3;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.18),
+        0 2px 4px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    transform: translateY(-2px);
+    transition: all 0.12s ease;
+}
+
+.right-buttons {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+#undo-btn,#redo-btn,#history-btn, #toggle-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #F0F0F0;
+    color: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.18),
+        0 2px 4px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    transform: translateY(-2px);
+    transition: all 0.12s ease;
+}
+
+#trash-btn:active,#undo-btn:active,#redo-btn:active, #history-btn:active, #toggle-btn:active {
+    transform: translateY(0);
+    box-shadow:
+        0 2px 4px rgba(0,0,0,0.15),
+        0 1px 2px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.button-grid, .page-2, .page-3 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+}
+.page-2, .page-3 {
+    display: none;
+}
+.page-3 {
+    grid-template-columns: 1fr;
+}
+
+button {
+    padding: 22px 0;
+    font-size: 20px;
+    border: none;
+    border-radius: 16px;
+    background: #F0F0F0;
+    color: #000;
+    box-shadow:
+        0 7.5px 12px rgba(0,0,0,0.18),
+        0 4.5px 6px rgba(0,0,0,0.12),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow:
+        0 3px 6px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.08);
+}
+
+button.reset-btn {
+    background: #D8D8D8;
+    box-shadow:
+        0 11.25px 18px rgba(0,0,0,0.27),
+        0 6.75px 9px rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+}
+
+button.reset-btn:active {
+    transform: translateY(0);
+    box-shadow:
+        0 4.5px 9px rgba(0,0,0,0.22),
+        0 1.5px 4.5px rgba(0,0,0,0.12);
+}
+
+button.eq {
+    background: #FF9900;
+    color: #fff;
+    box-shadow:
+        0 7.5px 12px rgba(0,0,0,0.18),
+        0 4.5px 6px rgba(0,0,0,0.12),
+        inset 0 2px 0 rgba(255,255,255,0.8);
+    transform: translateY(-3px);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+button.eq:active {
+    transform: translateY(0);
+    box-shadow:
+        0 3px 6px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.08);
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.confirm-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    width: 280px;
+    text-align: center;
+}
+
+.confirm-text {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.confirm-btns {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-btns button {
+    flex: 1;
+    padding: 14px 0;
+    font-size: 18px;
+}
+
+.btn-confirm.active, .btn-cancel.active {
+    background: #FF9900;
+    color: #fff;
+}
+
+.history-row {
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.history-row:active {
+  background: #ffe0b2;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 0 -4px;
+}
+/* ========== VIVO 手机专属适配 ========== */
+body.vivo-device {
+    --top-num-font: 34px;
+    --bottom-num-font: 18px;
+    --btn-size: 45px;
+    --btn-font: 14px;
+}
+
+/* 顶部数字优化 */
+body.vivo-device #expr-display {
+    font-size: var(--bottom-num-font);
+    margin-bottom: 6px;
+}
+body.vivo-device #result-display {
+    font-size: var(--top-num-font);
+    line-height: 1.1;
+}
+
+/* 小按钮适配 */
+body.vivo-device #undo-btn,
+body.vivo-device #redo-btn,
+body.vivo-device #history-btn,
+body.vivo-device #toggle-btn {
+    width: var(--btn-size);
+    height: var(--btn-size);
+    font-size: var(--btn-font);
+}
+
+/* 历史记录文字更紧凑 */
+body.vivo-device #history-btn {
+    line-height: 1;
+}
+/* 手机端专用：缩小数字 + 上移，不破坏动画，平板不生效 */
+@media only screen and (max-width: 767px) and (min-width: 320px) {
+  #result-display {
+    font-size: 28px;
+    margin-top: -12px;
+  }
+  #expr-display {
+    font-size: 16px;
+    margin-top: 0px;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+    <div class="confirm-box">
+        <div class="confirm-text">清空历史记录吗？</div>
+        <div class="confirm-btns">
+            <button class="btn-cancel active">取消</button>
+            <button class="btn-confirm">确定</button>
+        </div>
+    </div>
+</div>
+
+<div class="calculator">
+    <div class="display-wrapper">
+        <input type="text" id="expr-display" readonly>
+        <input type="text" id="result-display">
+    </div>
+
+    <div class="extra-row">
+        <button id="trash-btn">🗑️</button>
+        <div class="right-buttons">
+            <button id="undo-btn">↪</button>
+            <button id="redo-btn">↩</button>
+            <button id="history-btn">历史<br>记录</button>
+            <button id="toggle-btn">√ π<br>^ =</button>
+        </div>
+    </div>
+
+    <div class="button-grid" id="main-page">
+        <button class="reset-btn">归零</button>
+        <button>.</button>
+        <button>⌫</button>
+        <button class="eq">=</button>
+
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>+</button>
+
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button>-</button>
+
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button>×</button>
+
+        <button>0</button>
+        <button>00</button>
+        <button>%</button>
+        <button>÷</button>
+    </div>
+
+    <div class="page-2" id="page-2">
+        <button class="reset-btn">归零</button>
+        <button>.</button>
+        <button>⌫</button>
+        <button class="eq">=</button>
+
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>+</button>
+
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button>-</button>
+
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button>×</button>
+
+        <button>0</button>
+        <button>π</button>
+        <button>√</button>
+        <button>^</button>
+    </div>
+
+    <div class="page-3" id="page3">
+        <div id="history-display"></div>
+    </div>
+</div>
+
+<script>
+const exprDisplay = document.getElementById('expr-display');
+const resultDisplay = document.getElementById('result-display');
+const historyDisplay = document.getElementById('history-display');
+const mainButtons = document.querySelectorAll('#main-page button');
+const page2Buttons = document.querySelectorAll('#page-2 button');
+const toggleBtn = document.getElementById('toggle-btn');
+const historyBtn = document.getElementById('history-btn');
+const trashBtn = document.getElementById('trash-btn');
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
+const mainPage = document.getElementById('main-page');
+const page2 = document.getElementById('page-2');
+const page3 = document.getElementById('page3');
+const overlay = document.getElementById('overlay');
+const btnCancel = document.querySelector('.btn-cancel');
+const btnConfirm = document.querySelector('.btn-confirm');
+
+let currentInput = '';
+let lastResult = '';
+let isAfterEqual = false;
+
+let currentPage = 'main';
+let prevPage = 'main';
+let historyRecords = JSON.parse(localStorage.getItem('calcHistory')) || [];
+let confirmStep = 'cancel';
+let undoStack = [''];
+let redoStack = [];
+const MAX_UNDO_STEPS = 30;
+let calcMap = new Map();
+
+// ========== 手机禁输入法核心 ==========
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+// ========== VIVO 设备检测 ==========
+const isVivo = /vivo|VIVO/i.test(navigator.userAgent);
+if (isVivo) {
+    document.body.classList.add('vivo-device');
+}
+
+if (isMobile) resultDisplay.inputMode = "none";
+if (isIOS) {
+    resultDisplay.addEventListener('click', () => resultDisplay.focus());
+    resultDisplay.addEventListener('blur', () => setTimeout(() => resultDisplay.focus(), 10));
+}
+
+function updateHistoryDisplay() {
+    if (historyRecords.length === 0) {
+        historyDisplay.innerHTML = '暂无计算记录';
+        return;
+    }
+    let html = '';
+    for (let rec of [...historyRecords].reverse()) {
+        html += `<div class="history-row" onclick="copyHistoryResult(this)">${rec}</div><div style="height:1px;background:#ddd;margin:4px 0;"></div>`;
+    }
+    historyDisplay.innerHTML = html;
+}
+
+function saveHistoryToLocal() {
+    localStorage.setItem('calcHistory', JSON.stringify(historyRecords));
+}
+
+function saveToUndo() {
+    if (currentInput !== undoStack[undoStack.length - 1]) {
+        undoStack.push(currentInput);
+        redoStack = [];
+        if (undoStack.length > MAX_UNDO_STEPS) {
+            undoStack.shift();
+        }
+    }
+}
+
+function undo() {
+    if (undoStack.length <= 1) return;
+    redoStack.push(undoStack.pop());
+    currentInput = undoStack[undoStack.length - 1];
+    isAfterEqual = false;
+    updateDisplays();
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    const restoreVal = redoStack.pop();
+    undoStack.push(restoreVal);
+    if (undoStack.length > MAX_UNDO_STEPS) {
+        undoStack.shift();
+    }
+    currentInput = restoreVal;
+    isAfterEqual = false;
+    updateDisplays();
+}
+
+function copyHistoryResult(el) {
+    const lineText = el.textContent.trim();
+    const parts = lineText.split('=');
+    if (parts.length < 2) return;
+    const targetResult = parts[parts.length - 1].trim();
+
+    if (isAfterEqual) {
+        currentInput = targetResult;
+        lastResult = targetResult;
+        isAfterEqual = false;
+        updateDisplays();
+        saveToUndo();
+        resultDisplay.focus();
+        resultDisplay.setSelectionRange(currentInput.length, currentInput.length);
+        return;
+    }
+
+    const s = currentInput;
+    const opReg = /[+\-×÷√^%]/;
+
+    let lastOpPos = -1;
+    for (let i = s.length - 1; i >= 0; i--) {
+        if (opReg.test(s[i])) {
+            lastOpPos = i;
+            break;
+        }
+    }
+
+    let newInput;
+    if (lastOpPos === -1) {
+        newInput = targetResult;
+    } else {
+        newInput = s.substring(0, lastOpPos + 1) + targetResult;
+    }
+
+    currentInput = newInput;
+    isAfterEqual = false;
+    updateDisplays();
+    saveToUndo();
+    resultDisplay.focus();
+    resultDisplay.setSelectionRange(currentInput.length, currentInput.length);
+}
+
+function addHistoryRecord(expression, result) {
+    const coloredResult = `<span style="color:#FF9900; font-weight:bold;">${result}</span>`;
+    const record = `${expression} = ${coloredResult}`;
+    const opReg = /[+\-×÷√^%]/;
+    const hasOperator = opReg.test(expression);
+    const sameRecordIndex = historyRecords.findIndex(item => item.startsWith(`${expression} =`));
+    if (sameRecordIndex !== -1) {
+        historyRecords.splice(sameRecordIndex, 1);
+    }
+    historyRecords.push(record);
+    if (hasOperator) {
+        calcMap.set(expression, result);
+        calcMap.set(result, expression);
+    }
+    saveHistoryToLocal();
+    updateHistoryDisplay();
+}
+
+function formatResult(num) {
+    if (!isFinite(num)) return "计算超时";
+    if (isNaN(num)) return "啥意思？";
+    return String(Number(num.toPrecision(12)));
+}
+
+function cleanExpression(expr) {
+    expr = expr.replace(/(^|\+|\-|\×|÷|\()0+([1-9])/g, '$1$2');
+    expr = expr.replace(/(^|\+|\-|\×|÷|\()0+/g, '$10');
+
+    expr = expr.replace(/π(\d)/g, 'π*$1');
+    expr = expr.replace(/(\d)π/g, '$1*π');
+    expr = expr.replace(/π+/g, match => 'π*'.repeat(match.length).slice(0, -1));
+
+    expr = expr.replace(/\^ *1 *\/ *0/g, '^999');
+
+    // 百分号处理
+    expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+
+    let sqrtRegex = /(√+)(\d+(?:\.\d+)?)/g;
+    let match;
+    while ((match = sqrtRegex.exec(expr)) !== null) {
+        const roots = match[1];
+        const num = match[2];
+        let sqrtStr = num;
+        for (let i = 0; i < roots.length; i++) {
+            sqrtStr = `Math.sqrt(${sqrtStr})`;
+        }
+        expr = expr.replace(match[0], sqrtStr);
+        sqrtRegex.lastIndex = 0;
+    }
+
+    let numSqrtRegex = /(\d+(?:\.\d+)?)Math.sqrt/g;
+    while ((match = numSqrtRegex.exec(expr)) !== null) {
+        expr = expr.replace(match[0], `${match[1]}*Math.sqrt`);
+        numSqrtRegex.lastIndex = 0;
+    }
+
+    // 处理连续负号
+    expr = expr.replace(/(^|[+\-×÷\(])\++/g, '$1');
+    expr = expr.replace(/(^|[+\-×÷\(])\-{2,}/g, '$1');
+    expr = expr.replace(/(^|[+\-×÷\(])\-/g, function(m, p) {
+        return p === '' ? '-' : p + '-';
+    });
+
+    expr = expr.replace(/π/g, 'Math.PI');
+    return expr;
+}
+
+function getPreviewResult() {
+    try {
+        if (!currentInput || !/[+\-×÷√^%]/.test(currentInput)) return '';
+
+        let tempInput = currentInput;
+        tempInput = cleanExpression(tempInput);
+        tempInput = tempInput.replace(/[+\-×÷^*/]+$/, '');
+        if (!tempInput) return '';
+
+        let exp = tempInput;
+        if (/\/0(?!\d)/.test(exp)) return "不能除以 0";
+
+        const powerMatch = exp.match(/\*\*(\d+)/g);
+        if (powerMatch) {
+            for (let pTerm of powerMatch) {
+                const p = parseInt(pTerm.replace(/\*\*/g, ''));
+                if (p > 999) return "计算超时";
+            }
+        }
+
+        exp = exp.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**');
+        let res = Function('"use strict";return ' + exp)();
+
+        if (res === Infinity || res === -Infinity) return "不能除以 0";
+        if (isNaN(res)) return "啥意思？";
+        if (!isFinite(res)) return "计算超时";
+        return formatResult(res);
+    } catch (e) {
+        return "";
+    }
+}
+
+function updateDisplays() {
+    const preview = getPreviewResult();
+
+    if (isAfterEqual) {
+        exprDisplay.value = lastResult || '';
+        exprDisplay.style.fontSize = '36px';
+        exprDisplay.style.color = '#000';
+        resultDisplay.value = currentInput || '';
+        resultDisplay.style.fontSize = '20px';
+        resultDisplay.style.color = '#888';
+    } else {
+        exprDisplay.value = preview || '';
+        exprDisplay.style.fontSize = '20px';
+        exprDisplay.style.color = '#888';
+        resultDisplay.value = currentInput || '';
+        resultDisplay.style.fontSize = '36px';
+        resultDisplay.style.color = '#000';
+    }
+}
+
+function backspace() {
+    if (isAfterEqual) {
+        currentInput = '';
+        lastResult = '';
+        isAfterEqual = false;
+        saveToUndo();
+        updateDisplays();
+        return;
+    }
+
+    if (currentInput === '') return;
+    const start = resultDisplay.selectionStart;
+    const end = resultDisplay.selectionEnd;
+
+    if (start === end) {
+        currentInput = currentInput.substring(0, start - 1) + currentInput.substring(end);
+    } else {
+        currentInput = currentInput.substring(0, start) + currentInput.substring(end);
+    }
+
+    saveToUndo();
+    updateDisplays();
+
+    resultDisplay.focus();
+    resultDisplay.setSelectionRange(start > 0 ? start - 1 : 0, start > 0 ? start - 1 : 0);
+}
+
+function insertText(text) {
+    const basicOpReg = /[+\-×÷]/;
+    const otherOpReg = /[√^π%]/;
+    const allOpReg = /[+\-×÷√^%]/;
+
+    if (isAfterEqual) {
+        if (allOpReg.test(text)) {
+            currentInput = lastResult + text;
+        } else {
+            currentInput = text;
+        }
+        isAfterEqual = false;
+        saveToUndo();
+        updateDisplays();
+        resultDisplay.focus();
+        resultDisplay.setSelectionRange(currentInput.length, currentInput.length);
+        return;
+    }
+
+    const start = resultDisplay.selectionStart;
+    const end = resultDisplay.selectionEnd;
+    const before = currentInput.substring(0, start);
+    const after = currentInput.substring(end);
+
+    let newText = text;
+    if (basicOpReg.test(text) && start === end && before.length > 0) {
+        const lastChar = before.slice(-1);
+        if (lastChar === text) {
+            newText = '';
+        }
+    }
+
+    currentInput = before + newText + after;
+    saveToUndo();
+    updateDisplays();
+
+    const newPos = start + newText.length;
+    resultDisplay.focus();
+    resultDisplay.setSelectionRange(newPos, newPos);
+}
+
+function clearAll() {
+    currentInput = '';
+    lastResult = '';
+    isAfterEqual = false;
+    saveToUndo();
+    updateDisplays();
+}
+
+function calculate() {
+    if (isAfterEqual) {
+    return;
+}
+    if (!currentInput) return;
+
+    // 只删末尾多余运算符 +-×÷√^，不删 %
+    let cleanInput = currentInput.replace(/[+\-×÷√^]+$/, '');
+    if (!cleanInput) return;
+
+    try {
+        const originalExpr = currentInput;
+        let exp = cleanExpression(cleanInput);
+
+        const powerMatch = exp.match(/\*\*(\d+)/g);
+        if (powerMatch) {
+            for (let pTerm of powerMatch) {
+                const p = parseInt(pTerm.replace(/\*\*/g, ''));
+                if (p > 999) {
+                    lastResult = "计算超时";
+                    isAfterEqual = true;
+                    updateDisplays();
+                    saveToUndo();
+                    return;
+                }
+            }
+        }
+
+        if (/\/0(?!\d)/.test(exp)) {
+            lastResult = "不能除以 0";
+        } else {
+            exp = exp.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**');
+            let res = Function('"use strict";return ' + exp)();
+
+            if (res === Infinity || res === -Infinity) {
+                lastResult = "不能除以 0";
+            } else if (!isFinite(res)) {
+                lastResult = "计算超时";
+            } else if (isNaN(res)) {
+                lastResult = "啥意思？";
+            } else {
+                lastResult = formatResult(res);
+            }
+        }
+
+        isAfterEqual = true;
+        saveToUndo();
+
+        // 👇👇👇 触发等号动画
+        exprDisplay.classList.add('animate-expr');
+        resultDisplay.classList.add('animate-result');
+
+        // 动画结束后恢复样式
+        setTimeout(() => {
+            exprDisplay.classList.remove('animate-expr');
+            resultDisplay.classList.remove('animate-result');
+            updateDisplays();
+        }, 300);
+
+        if (!["不能除以 0", "啥意思？", "计算超时"].includes(lastResult)) {
+            addHistoryRecord(originalExpr, lastResult);
+        }
+    } catch (e) {
+        lastResult = "啥意思？";
+        isAfterEqual = true;
+        updateDisplays();
+        saveToUndo();
+    }
+}
+
+function switchPage() {
+    page3.style.display = 'none';
+    trashBtn.style.display = 'none';
+    undoBtn.style.display = 'flex';
+    redoBtn.style.display = 'flex';
+    if (currentPage === 'main') {
+        mainPage.style.display = 'none';
+        page2.style.display = 'grid';
+        currentPage = 'page2';
+        toggleBtn.innerHTML = '% ÷<br>0 =';
+    } else {
+        page2.style.display = 'none';
+        mainPage.style.display = 'grid';
+        currentPage = 'main';
+        toggleBtn.innerHTML = '√ π<br>^ =';
+    }
+}
+
+function switchHistoryPage() {
+    if (currentPage === 'page3') {
+        page3.style.display = 'none';
+        trashBtn.style.display = 'none';
+        undoBtn.style.display = 'flex';
+        redoBtn.style.display = 'flex';
+        if (prevPage === 'main') {
+            mainPage.style.display = 'grid';
+            page2.style.display = 'none';
+            currentPage = 'main';
+        } else {
+            page2.style.display = 'grid';
+            mainPage.style.display = 'none';
+            currentPage = 'page2';
+        }
+    } else {
+        prevPage = currentPage;
+        mainPage.style.display = 'none';
+        page2.style.display = 'none';
+        page3.style.display = 'block';
+        trashBtn.style.display = 'flex';
+        undoBtn.style.display = 'none';
+        redoBtn.style.display = 'none';
+        currentPage = 'page3';
+    }
+}
+
+function bindButtons(buttons) {
+    buttons.forEach(btn => {
+        btn.onmousedown = e => e.preventDefault();
+        btn.onclick = () => {
+            const t = btn.textContent.trim();
+
+            const isError = currentInput === "不能除以 0" || currentInput === "啥意思？" || currentInput === "计算超时";
+            if (t === "=") {
+                if (currentInput.trim() === "" || isError) {
+                    currentInput = "";
+                    updateDisplays();
+                    return;
+                }
+            }
+
+            if (isError) {
+                currentInput = "";
+                saveToUndo();
+                return;
+            }
+
+            switch(t) {
+                case "归零": clearAll(); break;
+                case "⌫": backspace(); break;
+                case "=": calculate(); break;
+                default: insertText(t); break;
+            }
+        };
+    });
+}
+
+bindButtons(mainButtons);
+bindButtons(page2Buttons);
+
+toggleBtn.onmousedown = e => e.preventDefault();
+toggleBtn.onclick = switchPage;
+
+historyBtn.onmousedown = e => e.preventDefault();
+historyBtn.onclick = switchHistoryPage;
+
+trashBtn.onmousedown = e => e.preventDefault();
+trashBtn.onclick = () => {
+    overlay.style.display = 'flex';
+    confirmStep = 'cancel';
+    btnCancel.classList.add('active');
+    btnConfirm.classList.remove('active');
+};
+
+undoBtn.onmousedown = e => e.preventDefault();
+undoBtn.onclick = undo;
+
+redoBtn.onmousedown = e => e.preventDefault();
+redoBtn.onclick = redo;
+
+btnCancel.onmousedown = e => e.preventDefault();
+btnCancel.onclick = () => {
+    if (confirmStep === 'cancel') {
+        overlay.style.display = 'none';
+    } else {
+        confirmStep = 'cancel';
+        btnCancel.classList.add('active');
+        btnConfirm.classList.remove('active');
+    }
+};
+
+btnConfirm.onmousedown = e => e.preventDefault();
+btnConfirm.onclick = () => {
+    if (confirmStep === 'confirm') {
+        historyRecords = [];
+        saveHistoryToLocal();
+        updateHistoryDisplay();
+        overlay.style.display = 'none';
+    } else {
+        confirmStep = 'confirm';
+        btnConfirm.classList.add('active');
+        btnCancel.classList.remove('active');
+    }
+};
+
+resultDisplay.addEventListener('input', () => {
+    currentInput = resultDisplay.value;
+    saveToUndo();
+    updateDisplays();
+});
+
+window.onload = () => {
+    updateDisplays();
+    updateHistoryDisplay();
+    resultDisplay.focus();
+};
+</script>
+</body>
+</html>
