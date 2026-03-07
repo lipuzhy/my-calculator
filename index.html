@@ -354,6 +354,19 @@ body.vivo-device #toggle-btn {
 /* 历史记录文字更紧凑 */
 body.vivo-device #history-btn {
     line-height: 1;
+    /* ========== 全局字体强制统一（解决 GitHub Pages + vivo 字体错乱） ========== */
+* {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+    font-weight: normal !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+}
+
+#result-display, #expr-display {
+    font-family: inherit !important;
+}
+
+/* ========== 原有样式分割线（请勿删除） ========== */
 }
 /* 手机端专用：缩小数字 + 上移，不破坏动画，平板不生效 */
 @media only screen and (max-width: 767px) and (min-width: 320px) {
