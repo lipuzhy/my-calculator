@@ -1023,64 +1023,74 @@ window.onload = () => {
     updateHistoryDisplay();
     resultDisplay.focus();
 };
-// 长按退格键（⌫）快速连续删除功能
-let backspaceTimer = null;
-let isLongPress = false;
 
-// 连续退格的执行函数
-function startContinuousBackspace() {
+let bs_timer = null;
+let is_holding = false;
+
+function start_bs() {
+  if (bs_timer) return;
+  bs_timer = setInterval(() => {
     backspace();
-    // 每 100 毫秒执行一次退格，可根据需要调整速度
-    backspaceTimer = setTimeout(startContinuousBackspace, 100);
+  }, 70);
 }
 
-// 给退格键绑定长按逻辑的通用函数
-function bindLongPressBackspace(btnId) {
-    const btn = document.getElementById(btnId);
-
-    // 移动端触摸事件
-    btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        isLongPress = false;
-        // 长按 300ms 后开始连续删除
-        setTimeout(() => {
-            isLongPress = true;
-            startContinuousBackspace();
-        }, 300);
-    });
-
-    btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        clearTimeout(backspaceTimer);
-        if (!isLongPress) {
-            backspace(); // 短按正常退格一次
-        }
-        isLongPress = false;
-    });
-
-    // 桌面端鼠标事件（兼容）
-    btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        isLongPress = false;
-        setTimeout(() => {
-            isLongPress = true;
-            startContinuousBackspace();
-        }, 300);
-    });
-
-    btn.addEventListener('mouseup', (e) => {
-        e.preventDefault();
-        clearTimeout(backspaceTimer);
-        if (!isLongPress) {
-            backspace();
-        }
-        isLongPress = false;
-    });
+function stop_bs() {
+  clearInterval(bs_timer);
+  bs_timer = null;
+  is_holding = false;
 }
 
-// 绑定两个退格键
-bindLongPressBackspace('backspace-btn-main');
-bindLongPressBackspace('backspace-btn-page2');
+function bind_bs(id) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+
+  // 按下
+  btn.onmousedown = (e) => {
+    e.preventDefault();
+    is_holding = false;
+    const t = setTimeout(() => {
+      is_holding = true;
+      start_bs();
+    }, 250);
+
+    const up = () => {
+      clearTimeout(t);
+      stop_bs();
+      if (!is_holding) {
+        backspace();
+      }
+      btn.removeEventListener('mouseup', up);
+      btn.removeEventListener('mouseleave', up);
+    };
+
+    btn.addEventListener('mouseup', up);
+    btn.addEventListener('mouseleave', up);
+  };
+
+  // 手机触摸
+  btn.ontouchstart = (e) => {
+    e.preventDefault();
+    is_holding = false;
+    const t = setTimeout(() => {
+      is_holding = true;
+      start_bs();
+    }, 250);
+
+    const end = () => {
+      clearTimeout(t);
+      stop_bs();
+      if (!is_holding) {
+        backspace();
+      }
+    };
+
+    btn.ontouchend = end;
+    btn.ontouchcancel = end;
+  };
+}
+
+bind_bs('backspace-btn-main');
+bind_bs('backspace-btn-page2');
 </script>
 </body>
 </html>
